@@ -45,7 +45,7 @@ contract DappToken {
             allowance[_from][msg.sender] >= _value,
             "the delegated spender should have allowance of the amount"
         );
-        balanceOf[_from] -= _value;
+        balanceOf[_from] -= _value; 
         balanceOf[_to] += _value;
         allowance[_from][msg.sender] -= _value;
         emit Transfer(_from, _to, _value);
