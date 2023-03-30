@@ -4,6 +4,7 @@ var DappToken = artifacts.require("./DappToken.sol");
 contract("DappTokenSale", function (accounts) {
   var tokenPrice = 1000000000000000;
   var tokenSaleInstance;
+  var tokenInstance;
   it("initializes token sale contract", async function () {
     tokenSaleInstance = await DappTokenSale.deployed();
     let contractAddress = await tokenSaleInstance.address;
@@ -15,8 +16,7 @@ contract("DappTokenSale", function (accounts) {
   });
 
   it("facilitates token buying", async function () {
-    tokenSaleInstance = await DappTokenSale.deployed();
-    var tokenInstance = await DappToken.deployed();
+    tokenInstance = await DappToken.deployed();
     let admin = accounts[0];
     let buyer = accounts[1];
     numberOfTokens = 10;
@@ -83,11 +83,46 @@ contract("DappTokenSale", function (accounts) {
       });
       assert.fail();
     } catch (error) {
-      console.log(error.message);
+      //console.log(error.message);
       assert(
         error.message.toString().includes("revert"),
         "there should be enough tokens in the tokenSale balance"
       );
     }
+  });
+
+  it("ends the sale contract", async function () {
+    // verifying only admin can do it
+    try {
+      let receipt = await tokenSaleInstance.endSale({ from: accounts[1] });
+      assert.fail();
+    } catch (error) {
+      assert(
+        error.message.toString().includes("revert"),
+        "only the admin can end sale"
+      );
+    }
+    // verifying transfer of all remaining tokens.
+    admin = await tokenSaleInstance.admin();
+    remainingTokens = await tokenInstance.balanceOf(tokenSaleInstance.address);
+    let oldBalance = await tokenInstance.balanceOf(admin);
+    let receipt = await tokenSaleInstance.endSale({ from: admin });
+    let adminBalance = await tokenInstance.balanceOf(admin);
+    assert.equal(
+      adminBalance.toNumber(),
+      remainingTokens.toNumber() + oldBalance.toNumber(),
+      "the admin's balance should increase"
+    );
+    let tokenSaleBalance = await tokenInstance.balanceOf(
+      tokenSaleInstance.address
+    );
+    assert.equal(
+      tokenSaleBalance.toNumber(),
+      0,
+      "the token sale balance should be empty"
+    );
+    // Checking that the price of the token was reset after the contract destruction.
+    //price = await tokenSaleInstance.tokenPrice();
+    //assert.equal(price.toNumber(), 0, "token Price was reset");
   });
 });

@@ -34,4 +34,10 @@ contract DappTokenSale {
         tokensSold += _numberOfTokens;
         emit Sell(msg.sender, _numberOfTokens);
     }
+
+    function endSale() public {
+        require(msg.sender == admin, "the sender should be an admin");
+        tokenContract.transfer(admin, tokenContract.balanceOf(address(this)));
+        //selfdestruct(payable(admin));
+    }
 }
